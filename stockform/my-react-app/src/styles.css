@@ -33,7 +33,7 @@ body {
 .input {
   height: 56px;
   border: 2px solid #e5e7eb;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 0 16px;
   font-size: 20px;
   outline: none;
@@ -66,7 +66,7 @@ body {
 .button {
   height: 56px;
   border: none;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 0 28px;
   font-size: 20px;
   font-weight: 700;
@@ -80,7 +80,7 @@ body {
 }
 
 .button:active {
-  transform: scale(0.98);
+  transform: scale(0.99);
 }
 
 /* Stock list */
