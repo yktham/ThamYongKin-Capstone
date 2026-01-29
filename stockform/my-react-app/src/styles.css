@@ -1,0 +1,94 @@
+html,
+body {
+  background: #ffffff !important;
+}
+
+/* Page layout */
+.container {
+  padding: 32px;
+}
+
+/* Headings */
+.title {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 0 0 24px 0;
+}
+
+.sectionTitle {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 36px 0 16px 0;
+}
+
+/* Form layout */
+.formRow {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+}
+
+/* Inputs */
+.input {
+  height: 56px;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 0 16px;
+  font-size: 20px;
+  outline: none;
+  color: #111827;
+}
+
+.input::placeholder {
+  color: #9ca3af;
+}
+
+.input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+/* Widths */
+.inputSymbol {
+  width: 280px;
+}
+
+.inputQty {
+  width: 180px;
+}
+
+.inputPrice {
+  width: 240px;
+}
+
+/* Button */
+.button {
+  height: 56px;
+  border: none;
+  border-radius: 14px;
+  padding: 0 28px;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.button:hover {
+  background: #1d4ed8;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+/* Stock list */
+.emptyText {
+  font-size: 16px;
+}
+
+.stockItem {
+  font-size: 16px;
+  margin: 6px 0;
+}
