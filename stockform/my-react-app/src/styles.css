@@ -92,3 +92,38 @@ body {
   font-size: 16px;
   margin: 6px 0;
 }
+.stockList {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stockCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #ffffff;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.profit {
+  color: #15803d; /* green */
+  font-weight: 700;
+}
+
+.loss {
+  color: #b91c1c; /* red */
+  font-weight: 700;
+}
+/* Make Symbol line bold (CSS controlled) */
+.symbolLine {
+  font-weight: 700;
+}
+
+/* Header image above title */
+.headerImage {
+  width: 160px;
+  margin-bottom: 12px;
+}
