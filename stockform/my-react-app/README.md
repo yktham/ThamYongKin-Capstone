@@ -1,16 +1,57 @@
-# React + Vite
+# Stock Form (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A simple finance dashboard that lets users add stock purchases and displays the current price and profit/loss per entry. Prices are fetched from the Alpha Vantage `GLOBAL_QUOTE` API.
 
-Currently, two official plugins are available:
+## Features
+- Add stock purchases (symbol, quantity, purchase price)
+- Stock list rendered as cards showing:
+  - Symbol
+  - Quantity
+  - Purchase Price
+  - Current Price (from Alpha Vantage)
+  - Profit/Loss (green when positive, red when negative)
+- State management using React Context (`StockContext`)
+- Uses hooks: `useState`, `useEffect`, `useCallback`, `useContext`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## How to run locally
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/<your-username>/<repo-name>.git
+   cd <repo-name>
+2. Install dependencies: install npm
+3. Run dev server: npm run devnpm run dev
+4. Open the URL shown in terminal (typically): http://localhost:5173/
 
-## React Compiler
+## API integration notes
+    This project uses Alpha Vantage GLOBAL_QUOTE:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+    Endpoint: https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=SYMBOL&apikey=YOUR_KEY
 
-## Expanding the ESLint configuration
+    Rate limit handling (important)
+    Alpha Vantage free tier can return rate-limit responses such as "Information" or "Note".
+    When this happens, the app: Shows a short message: “API limit reached today — showing demo price.”
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+    Uses a fallback demo price to ensure Current Price and Profit/Loss still display for all entries.
+
+## Bugs / challenges encountered and resolutions
+    Context undefined / blank screen
+    Cause: StockProvider was not wrapping the component tree.
+    Fix: Wrapped <App /> with <StockProvider> in main.jsx.
+
+    React warning: unique key prop
+    Cause: list items were using non-unique keys.
+    Fix: added unique id per stock entry (crypto.randomUUID()) and used it for keys.
+
+    Alpha Vantage daily quota exceeded
+    Cause: API returned "Information" rate-limit message instead of "Global Quote".
+    Fix: detected rate-limit responses and used a fallback demo price while still showing a short note.
+
+    CSS not applying / missing class
+    Cause: file overwrite / incorrect file edits and a CSS syntax error (missing braces).
+    Fix: corrected CSS structure, ensured styles.css is imported, and verified class usage.
+
+## Improvements beyond baseline requirements
+    Added robust API error handling and a fallback demo price to keep the UI functional during rate limits.
+    Added polished card-based UI styling and consistent typography.
+    Added a header image (branding) aligned to the left.
+    Implemented queued fetching behavior to avoid rapid repeated API calls (free-tier friendly).
