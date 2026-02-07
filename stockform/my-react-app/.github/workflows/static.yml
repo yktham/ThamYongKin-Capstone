@@ -36,8 +36,10 @@ jobs:
           node-version: 20
           cache: 'npm'
       - name: Install dependencies
+        working-directory: ./stockform/my-react-app
         run: npm ci
       - name: Build
+        working-directory: ./stockform/my-react-app
         run: npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -45,7 +47,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload dist folder
-          path: './dist'
+          path: './stockform/my-react-app'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
