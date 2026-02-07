@@ -19,7 +19,7 @@ A simple finance dashboard that lets users add stock purchases and displays the 
    git clone https://github.com/<your-username>/<repo-name>.git
    cd <repo-name>
 2. Install dependencies: install npm
-3. Run dev server: npm run devnpm run dev
+3. Run dev server: npm run dev
 4. Open the URL shown in terminal (typically): http://localhost:5173/
 
 ## API integration notes
