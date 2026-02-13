@@ -1,9 +1,4 @@
-import { useContext } from "react";
-import { StockContext } from "../context/StockContext";
-
-export default function StockList() {
-  const { stocks } = useContext(StockContext);
-
+export default function StockList({ stocks }) {
   if (!stocks || stocks.length === 0) {
     return <p className="emptyText">No stocks added yet.</p>;
   }
@@ -11,7 +6,7 @@ export default function StockList() {
   return (
     <div className="stockList">
       {stocks.map((s, i) => {
-        const key = `${s.id}-${i}`;
+        const key = s.id ?? `${s.symbol}-${i}`;
 
         const currentPriceText =
           s.currentPrice !== null
@@ -43,7 +38,6 @@ export default function StockList() {
 
             <div className={plClass}>Profit/Loss: {profitLossText}</div>
 
-            {/* Short clean API notice */}
             {s.usedFallback && (
               <div style={{ marginTop: 8, fontSize: 14, opacity: 0.7 }}>
                 API limit reached today — showing demo price.
