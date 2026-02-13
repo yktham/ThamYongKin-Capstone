@@ -16,8 +16,9 @@ A simple finance dashboard that lets users add stock purchases and displays the 
 ## How to run locally
 1. Clone the repository:
    ```bash
-   git clone https://github.com/<your-username>/<repo-name>.git
-   cd <repo-name>
+   git clone https://github.com/yktham/ThamYongKin-Capstone.git
+   cd stockform
+   cd my-react-app
 2. Install dependencies: install npm
 3. Run dev server: npm run dev
 4. Open the URL shown in terminal (typically): http://localhost:5173/
