@@ -1,9 +1,6 @@
-import { useState, useContext } from "react";
-import { StockContext } from "../context/StockContext";
+import { useState } from "react";
 
-export default function StockForm() {
-  const { addStock, formError } = useContext(StockContext);
-
+export default function StockForm({ onAddStock, error }) {
   const [symbol, setSymbol] = useState("");
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
@@ -12,13 +9,12 @@ export default function StockForm() {
     e.preventDefault();
     if (!symbol || !quantity || !price) return;
 
-    const result = await addStock({
+    const result = await onAddStock({
       symbol: symbol.trim().toUpperCase(),
       quantity: Number(quantity),
       price: Number(price),
     });
 
-    // ✅ Only clear form if stock was valid
     if (result?.ok) {
       setSymbol("");
       setQuantity("");
@@ -58,10 +54,9 @@ export default function StockForm() {
         </button>
       </form>
 
-      {/* ✅ Show validation error */}
-      {formError && (
+      {error && (
         <div style={{ marginTop: 8, color: "red", fontSize: 14 }}>
-          {formError}
+          {error}
         </div>
       )}
     </>
