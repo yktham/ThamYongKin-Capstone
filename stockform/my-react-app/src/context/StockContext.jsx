@@ -3,15 +3,18 @@ import { createContext, useState, useEffect, useCallback, useRef } from "react";
 export const StockContext = createContext();
 
 const API_KEY = "MDWGB788T4MAHP1H";
-const REQUEST_DELAY_MS = 15000; // safe spacing (free tier)
-const FALLBACK_PRICE = 289.05; // demo fallback when API quota is hit
+const REQUEST_DELAY_MS = 15000;
+const FALLBACK_PRICE = 289.05;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export function StockProvider({ children }) {
   const [stocks, setStocks] = useState([]);
+  const [formError, setFormError] = useState("");
 
-  // Always-up-to-date list for the queue to read
+  // Cache of symbols we have confirmed are VALID (from a real quote response)
+  const validSymbolsRef = useRef(new Set());
+
   const stocksRef = useRef([]);
   useEffect(() => {
     stocksRef.current = stocks;
@@ -31,28 +34,37 @@ export function StockProvider({ children }) {
       const msg =
         data?.Information || data?.Note || data?.["Error Message"] || null;
 
-      // ✅ If API is limited/blocked, use fallback demo price (still calculate P/L)
+      // API limit/server message: fallback demo price
       if (msg) {
         const currentPrice = FALLBACK_PRICE;
-        const profitLoss =
-          (currentPrice - stock.price) * stock.quantity;
+        const profitLoss = (currentPrice - stock.price) * stock.quantity;
 
         return {
           ...stock,
           currentPrice,
           profitLoss,
-          apiError: msg, // keep message for transparency
+          apiError: msg,
           usedFallback: true,
+          invalidSymbol: false,
         };
       }
 
       const priceStr = data?.["Global Quote"]?.["05. price"];
-      const currentPrice = priceStr ? parseFloat(priceStr) : null;
 
-      const profitLoss =
-        currentPrice !== null
-          ? (currentPrice - stock.price) * stock.quantity
-          : null;
+      // If no price, treat as invalid and STOP retrying
+      if (!priceStr) {
+        return {
+          ...stock,
+          currentPrice: null,
+          profitLoss: null,
+          apiError: "Invalid stock symbol (no quote returned)",
+          usedFallback: false,
+          invalidSymbol: true,
+        };
+      }
+
+      const currentPrice = parseFloat(priceStr);
+      const profitLoss = (currentPrice - stock.price) * stock.quantity;
 
       return {
         ...stock,
@@ -60,9 +72,10 @@ export function StockProvider({ children }) {
         profitLoss,
         apiError: null,
         usedFallback: false,
+        invalidSymbol: false,
       };
     } catch {
-      // ✅ Network error: also fallback so UI still shows numbers
+      // Network error: fallback
       const currentPrice = FALLBACK_PRICE;
       const profitLoss = (currentPrice - stock.price) * stock.quantity;
 
@@ -72,6 +85,7 @@ export function StockProvider({ children }) {
         profitLoss,
         apiError: "Network error (fallback used)",
         usedFallback: true,
+        invalidSymbol: false,
       };
     }
   }, []);
@@ -85,11 +99,10 @@ export function StockProvider({ children }) {
         const list = stocksRef.current;
 
         const next = list.find(
-          (s) => s.currentPrice === null && !s.isLoading
+          (s) => s.currentPrice === null && !s.isLoading && !s.invalidSymbol
         );
         if (!next) break;
 
-        // mark loading
         setStocks((prev) =>
           prev.map((s) => (s.id === next.id ? { ...s, isLoading: true } : s))
         );
@@ -110,32 +123,108 @@ export function StockProvider({ children }) {
   }, [fetchOne]);
 
   useEffect(() => {
-    const needsFetch = stocks.some((s) => s.currentPrice === null && !s.isLoading);
+    const needsFetch = stocks.some(
+      (s) => s.currentPrice === null && !s.isLoading && !s.invalidSymbol
+    );
     if (needsFetch) runQueue();
   }, [stocks, runQueue]);
 
-  const addStock = (stock) => {
-    const newItem = {
-      id: crypto.randomUUID(),
-      ...stock,
-      currentPrice: null,
-      profitLoss: null,
-      apiError: null,
-      usedFallback: false,
-      isLoading: false,
-    };
+  // ✅ Validate BEFORE adding
+  const validateSymbol = useCallback(async (symbol) => {
+    try {
+      const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(
+        symbol
+      )}&apikey=${encodeURIComponent(API_KEY)}`;
 
-    setStocks((prev) => {
-      const next = [...prev, newItem];
-      stocksRef.current = next; // keep ref in sync immediately
-      return next;
-    });
+      const res = await fetch(url);
+      const data = await res.json();
 
-    runQueue(); // start immediately
-  };
+      const msg =
+        data?.Information || data?.Note || data?.["Error Message"] || null;
+
+      // 🔒 If rate-limited, we CANNOT validate new symbols reliably.
+      // Only allow if symbol was previously validated as real.
+      if (msg) {
+        if (validSymbolsRef.current.has(symbol)) {
+          return { ok: true, reason: "rate_limited_but_known_valid" };
+        }
+        return {
+          ok: false,
+          error:
+            "API limit reached — cannot validate new stock symbols right now. Try again later.",
+        };
+      }
+
+      const priceStr = data?.["Global Quote"]?.["05. price"];
+
+      // Invalid symbol -> block
+      if (!priceStr) {
+        return { ok: false, error: `Invalid stock symbol: ${symbol}` };
+      }
+
+      // Valid -> cache it
+      validSymbolsRef.current.add(symbol);
+      return { ok: true, reason: "validated" };
+    } catch {
+      // Network error: also cannot validate new symbols safely
+      if (validSymbolsRef.current.has(symbol)) {
+        return { ok: true, reason: "network_error_but_known_valid" };
+      }
+      return {
+        ok: false,
+        error: "Network error — cannot validate symbol. Please try again.",
+      };
+    }
+  }, []);
+
+  const addStock = useCallback(
+    async (stock) => {
+      setFormError("");
+
+      const symbol = stock.symbol?.trim().toUpperCase();
+      if (!symbol) {
+        setFormError("Please enter a stock symbol.");
+        return { ok: false };
+      }
+
+      if (!/^[A-Z0-9.\-]{1,10}$/.test(symbol)) {
+        setFormError(`Invalid stock symbol format: ${symbol}`);
+        return { ok: false };
+      }
+
+      const v = await validateSymbol(symbol);
+      if (!v.ok) {
+        setFormError(v.error);
+        return { ok: false };
+      }
+
+      const newItem = {
+        id: crypto.randomUUID(),
+        symbol,
+        quantity: stock.quantity,
+        price: stock.price,
+        currentPrice: null,
+        profitLoss: null,
+        apiError: null,
+        usedFallback: false,
+        isLoading: false,
+        invalidSymbol: false,
+      };
+
+      setStocks((prev) => {
+        const next = [...prev, newItem];
+        stocksRef.current = next;
+        return next;
+      });
+
+      runQueue();
+      return { ok: true };
+    },
+    [runQueue, validateSymbol]
+  );
 
   return (
-    <StockContext.Provider value={{ stocks, addStock }}>
+    <StockContext.Provider value={{ stocks, addStock, formError }}>
       {children}
     </StockContext.Provider>
   );
